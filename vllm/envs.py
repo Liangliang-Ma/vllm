@@ -257,6 +257,7 @@ if TYPE_CHECKING:
     VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS: bool = False
     VLLM_NIXL_EP_MAX_NUM_RANKS: int = 32
     VLLM_XPU_ENABLE_XPU_GRAPH: bool = False
+    VLLM_XPU_USE_SAMPLER_KERNEL: bool = True
 
 
 def get_default_cache_root():
@@ -1705,6 +1706,10 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # Whether enable XPU graph on Intel GPU
     "VLLM_XPU_ENABLE_XPU_GRAPH": lambda: bool(
         int(os.getenv("VLLM_XPU_ENABLE_XPU_GRAPH", "0"))
+    ),
+    # whether use xpu specific sample kernel
+    "VLLM_XPU_USE_SAMPLER_KERNEL": lambda: bool(
+        int(os.getenv("VLLM_XPU_USE_SAMPLER_KERNEL", "1"))
     ),
     # Enable simple KV offload.
     "VLLM_USE_SIMPLE_KV_OFFLOAD": lambda: bool(
