@@ -160,6 +160,17 @@ class XPUPlatform(Platform):
         return "vllm.compilation.cuda_graph.CUDAGraphWrapper"
 
     @classmethod
+    def mem_get_info(cls, device) -> tuple[int, int]:
+        if cls.is_data_center_gpu():
+            # For data center GPU, use torch.xpu.mem_get_info
+            return torch.xpu.mem_get_info(device)
+        # FIXME:kunshang, For client GPU, estimate free memory
+        reserved_mem = torch.xpu.memory_reserved(device)
+        total_mem = torch.xpu.get_device_properties(device).total_memory
+        estimated_free_mem = total_mem - reserved_mem
+        return estimated_free_mem, total_mem
+
+    @classmethod
     def check_and_update_config(cls, vllm_config: VllmConfig) -> None:
         parallel_config = vllm_config.parallel_config
 
