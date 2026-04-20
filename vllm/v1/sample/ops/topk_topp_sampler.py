@@ -243,6 +243,12 @@ class TopKTopPSampler(nn.Module):
         k: torch.Tensor | None,
         p: torch.Tensor | None,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        # The XPU-specific top-k/top-p sampler kernel currently hangs on
+        # Intel GPU for batch size 1 (e.g. a single decode request with
+        # penalties/stop tokens). Fall back to the native Torch path for
+        # batch size 1 while keeping the fast kernel for larger batches.
+        if logits.shape[0] <= 1:
+            return self.forward_native(logits, generators, k, p)
         random_sampled = torch.empty(
             logits.shape[0], dtype=torch.int64, device=logits.device
         )

@@ -762,8 +762,15 @@ class VllmConfig:
                     f"`{executor_backend}` does not support async scheduling yet."
                 )
         elif self.scheduler_config.async_scheduling is None:
+            from vllm.platforms import current_platform
+
+            if current_platform.is_xpu():
+                # Async scheduling hangs on XPU (stuck on event.synchronize
+                # during the copy stream). Disable it by default; users can
+                # still opt in explicitly.
+                self.scheduler_config.async_scheduling = False
             # Enable async scheduling unless there is an incompatible option.
-            if (
+            elif (
                 self.speculative_config is not None
                 and self.speculative_config.method not in get_args(EagleModelTypes)
                 and self.speculative_config.method not in get_args(NgramGPUTypes)
