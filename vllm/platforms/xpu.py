@@ -162,6 +162,33 @@ class XPUPlatform(Platform):
         return device_props.total_memory
 
     @classmethod
+    def mem_get_info(
+        cls, device: torch.types.Device = None
+    ) -> tuple[int, int]:
+        """Return (free, total) memory in bytes for the XPU device.
+
+        ``torch.xpu.mem_get_info()`` is unreliable on some XPU drivers and
+        always reports ``free == total``.  Fall back to
+        ``memory_reserved()`` so that vLLM's memory profiler can see how
+        much device memory PyTorch has already claimed.
+        """
+        if device is not None:
+            if isinstance(device, str):
+                device = torch.device(device)
+            if isinstance(device, torch.device):
+                device = device.index
+        if device is None:
+            device = torch.xpu.current_device()
+
+        total = torch.xpu.get_device_properties(device).total_memory
+        # Try the driver value first; use reserved memory as fallback.
+        driver_free, _ = torch.xpu.mem_get_info(device)
+        reserved = torch.xpu.memory_reserved(device)
+        free = min(driver_free, total - reserved)
+        free = max(free, 0)
+        return (free, total)
+
+    @classmethod
     def inference_mode(cls):
         return torch.no_grad()
 
