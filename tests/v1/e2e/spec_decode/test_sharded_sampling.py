@@ -105,7 +105,7 @@ def _dspark_sharding_state(worker) -> tuple[bool, bool]:
     speculator = worker.model_runner.speculator
     draft_logits = speculator.draft_logits
     sharded = draft_logits is not None and draft_logits.row_mapping is not None
-    return sharded, speculator._sharded_sequential_comm is not None
+    return sharded, speculator._sharded_sequential_sampling
 
 
 def test_dspark_sharded_sampling_equivalence(monkeypatch: pytest.MonkeyPatch):

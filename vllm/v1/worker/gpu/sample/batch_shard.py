@@ -419,6 +419,18 @@ def all_to_all_vocab_shards(
     )
 
 
+def all_gather_batch_shards(shard: torch.Tensor) -> torch.Tensor:
+    """All-gather equal-size per-rank shards along dim 0, in rank order."""
+    pynccl_comm = get_tp_pynccl_comm()
+    if pynccl_comm is None:
+        return tensor_model_parallel_all_gather(shard, dim=0)
+    gathered = shard.new_empty(
+        pynccl_comm.world_size * shard.shape[0], *shard.shape[1:]
+    )
+    pynccl_comm.all_gather(gathered, shard.contiguous())
+    return gathered
+
+
 def _shard_grammar_output(
     grammar_output: GrammarOutput,
     local_req_ids: list[str],
